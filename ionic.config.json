@@ -1,0 +1,8 @@
+{
+  "name": "btz-ionic-app-x5-v3-android",
+  "app_id": "",
+  "type": "ionic-angular",
+  "integrations": {
+    "cordova": {}
+  }
+}
