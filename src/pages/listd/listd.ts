@@ -2,7 +2,6 @@ import {Component} from '@angular/core';
 import {AlertController, ModalController, NavController, NavParams} from 'ionic-angular';
 import {HttpStorage} from '../../providers/httpstorage';
 import {ExamPage} from '../exam/exam';
-import {NullPage} from '../null/null';
 import * as $ from "jquery";
 @Component({
   selector: 'page-listd',
@@ -125,7 +124,6 @@ export class ListDPage {
         for (let w of this.oexam) {
           if (v.id == w.id) {
             if (v.done == 0 || v.done == 3) {
-              console.log(w)
               v.done = w.done;
               v.set = w.set;
             }

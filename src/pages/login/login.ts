@@ -74,7 +74,6 @@ export class LoginPage {
     });
   }
 
-
   free() {
     var this_ = this;
     let user: any = {
@@ -173,7 +172,6 @@ export class LoginPage {
         this.clear();
       }
     });
-
   }
 
   forget() {

@@ -256,12 +256,15 @@ export class HomePage {
         this.navCtrl.push(ListPage, {subject: this.subject, title: this.cards[n].tit, type: n});
         break;
       case 10:
+        //错题记录
         this.navCtrl.push(ListDPage, {subject: this.subject, title: "错题", type: n});
         break;
       case 11:
+        //收藏题目
         this.navCtrl.push(ListDPage, {subject: this.subject, title: "收藏", type: n});
         break;
       case 12:
+        //笔记目录
         this.navCtrl.push(NotePage, {subject: this.subject, type: n});
         break;
     }

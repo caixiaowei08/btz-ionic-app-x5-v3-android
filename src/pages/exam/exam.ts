@@ -8,7 +8,6 @@ import {ErrorPage} from '../error/error';
 import {HttpStorage} from '../../providers/httpstorage';
 import {LoginPage} from '../../pages/login/login';
 
-
 import * as $ from "jquery";
 
 @Component({
@@ -23,6 +22,7 @@ export class ExamPage {
   all: any;
   mode: any;
   time: any;
+  moduleType: any;
   timeM: any;
   exam: any;
   id: any;
@@ -38,11 +38,16 @@ export class ExamPage {
     this.exams = this.navParams.get('exams');
     this.mode = this.navParams.get('mode');
     this.time = this.navParams.get("time");
+    this.moduleType = this.navParams.get("moduleType");
     this.saveQRFunction = this.navParams.get("saveQRFunction");
     if (this.mode != 2 && this.time == 0) {
       this.exams.sort((a, b) => {
-        if (a.typeShow == b.typeShow) return a.type - b.type;
-        else return a.typeShow - b.typeShow
+        if (a.typeShow == b.typeShow) {
+          return a.type - b.type;
+        }
+        else {
+          return a.typeShow - b.typeShow;
+        }
       });
     }
     this.timeM = "";
@@ -56,7 +61,9 @@ export class ExamPage {
           tmp--;
           getTime(tmp);
         }
-        else checkAll();
+        else {
+          checkAll();
+        }
       }, 1000)
     }
     this.id = 0;
@@ -164,29 +171,44 @@ export class ExamPage {
       if (i < this.getContentLength - 1) res += "<br/><br/>";
     }
     this.exam.set = res;
-    if (this.exam.done > 0) this.check();
+    if (this.exam.done > 0) {
+      this.check();
+    }
     this.saveQRFunction();
   }
 
   //单选题
   getType1(i: number) {
-    if (String.fromCharCode(i + 65) != this.exam.set) return '';
+    if (String.fromCharCode(i + 65) != this.exam.set) {
+      return ''
+    }
     else {
-      if (this.exam.done == 0) return 'exam-botton-choose';
+      if (this.exam.done == 0) {
+        return 'exam-botton-choose';
+      }
       else {
-        if (this.exam.set == this.exam.answer) return 'exam-botton-right';
-        else return 'exam-botton-wrong';
+        if (this.exam.set == this.exam.answer) {
+          return 'exam-botton-right';
+        }
+        else {
+          return 'exam-botton-wrong';
+        }
       }
     }
+
 
   }
 
   setType1(i: number) {
     this.exam.set = String.fromCharCode(i + 65);
-    if (this.exam.done > 0) {
+    if (this.exam.done > 0) { //原来提交过 修改答案会再次核对答案
       this.check();
     }
+    //上传单选题做题记录
+    this.saveSingleQuestionRecordByAppTokenAndExerciseId(this.exam);
+    //保存本地做题记录
     this.saveQRFunction();
+
   }
 
   //多选题
@@ -239,7 +261,9 @@ export class ExamPage {
     if (this.exam.done > 0) {
       this.check();
     }
+    this.saveSingleQuestionRecordByAppTokenAndExerciseId(this.exam);
     this.saveQRFunction();
+
   }
 
   //判断题
@@ -257,31 +281,53 @@ export class ExamPage {
 
   setType3(i: number) {
     this.exam.set = this.getContent1()[i];
-    if (this.exam.done > 0) this.check();
+    if (this.exam.done > 0) {
+      this.check();
+    }
+    this.saveSingleQuestionRecordByAppTokenAndExerciseId(this.exam);
     this.saveQRFunction();
+
   }
 
   //分录题1
   getType4(n: number) {
-    if (this.exam.set == "") return "";
-    else return this.exam.set.split("<br/><br/>")[n];
+    if (this.exam.set == "") {
+      return "";
+    }
+    else {
+      return this.exam.set.split("<br/><br/>")[n];
+    }
   }
 
   setType4(event: any, n: number) {
     var tmp = "";
     var a = this.getContentLength;
     for (var i = 0; i < a - 1; i++) {
-      if (i == n) tmp += event.target.value + "<br/><br/>";
-      else tmp += "<br/><br/>";
+      if (i == n) {
+        tmp += event.target.value + "<br/><br/>";
+      }
+      else {
+        tmp += "<br/><br/>";
+      }
     }
-    if (n == a - 1) tmp += event.target.value;
-    else tmp += "";
-    if (this.exam.set == "") this.exam.set = tmp;
+
+    if (n == a - 1) {
+      tmp += event.target.value;
+    }
+    else {
+      tmp += "";
+    }
+
+    if (this.exam.set == "") {
+      this.exam.set = tmp;
+    }
     else {
       tmp = "";
       var tp = this.exam.set.split("<br/><br/>");
       tp[n] = event.target.value;
-      for (var i = 0; i < a - 1; i++) tmp += tp[i] + "<br/><br/>";
+      for (var i = 0; i < a - 1; i++) {
+        tmp += tp[i] + "<br/><br/>";
+      }
       tmp += tp[a - 1];
       this.exam.set = tmp;
     }
@@ -289,7 +335,9 @@ export class ExamPage {
     if (this.exam.done > 0 && this.exam.typeShow != 5 && this.exam.typeShow != 8) {
       this.check();
     }
+    this.saveSingleQuestionRecordByAppTokenAndExerciseId(this.exam);
     this.saveQRFunction();
+
   }
 
   //分录题2
@@ -340,6 +388,7 @@ export class ExamPage {
         this.check();
       }
     }
+    this.saveSingleQuestionRecordByAppTokenAndExerciseId(this.exam);
     this.saveQRFunction();
   }
 
@@ -367,7 +416,9 @@ export class ExamPage {
       if (this.exam.done > 0) {
         this.check();
       }
+      this.saveSingleQuestionRecordByAppTokenAndExerciseId(this.exam);
       this.saveQRFunction();
+
     }
   }
 
@@ -441,10 +492,14 @@ export class ExamPage {
     }
     else {
       if (this.exam.typeShow == 5 || this.exam.typeShow == 8) {
-        if (this.exam.done == 0) this.exam.done = 3;
+        if (this.exam.done == 0) {
+          this.exam.done = 3;
+        }
       }
       else {
-        if (this.exam.set == this.exam.answer) this.exam.done = 1;
+        if (this.exam.set == this.exam.answer) {
+          this.exam.done = 1;
+        }
         else {
           if (this.exam.typeShow == 4 || this.exam.typeShow == 6 || this.exam.typeShow == 7 || this.exam.typeShow == 9) {
             let as1 = this.exam.answer.split("<br/><br/>");
@@ -469,6 +524,7 @@ export class ExamPage {
       exams: this.exams,
       mode: this.time,
       check: this.check,
+      moduleType: this.moduleType,
       saveQRFunction: this.saveQRFunction
     }).then(() => {
       this.viewCtrl.dismiss()
@@ -494,8 +550,12 @@ export class ExamPage {
   }
 
   swipe(event: any) {
-    if (event.direction == 2) this.next();
-    if (event.direction == 4) this.prev();
+    if (event.direction == 2) {
+      this.next();
+    }
+    if (event.direction == 4) {
+      this.prev();
+    }
   }
 
   getDtk() {
@@ -521,6 +581,7 @@ export class ExamPage {
       this.get = true;
       this.exam.get = 1;
     }
+    this.saveColletStateByAppTokenAndExerciseId(this.exam);//提交关注记录
   }
 
   goBack() {
@@ -538,7 +599,47 @@ export class ExamPage {
   /**
    * 做题时 做题记录上传服务器 做题记录保存
    */
-  saveSingleQuestionRecordByAppTokenAndExerciseId(exercise,) {
+  saveSingleQuestionRecordByAppTokenAndExerciseId(exercise) {
+    let this_ = this;
+    if (this.moduleType !== null && (this.moduleType === 1 || this.moduleType === 2 || this.moduleType === 4 || this.moduleType === 7)) { //目前只记录 1、章节练习 2、核心考点的做题 4。考前押题 7.历年真题
+      this_.httpstorage.getStorage('user', (data) => {
+        if (data == null) {//无登录信息 返回登录页面
+          this_.navCtrl.setRoot(LoginPage);
+          return;
+        } else if (data.token === '') {//游客不保存提交
+          return;
+        } else if (data.token !== null && data.token !== '' && data.token.length > 0) {//登录的注册 可提交做题数据
+          this_.httpstorage.postHttp("/app/exerciseRecordController.do?doSaveSingleQuestionRecordByAppTokenAndExerciseId", JSON.stringify({
+            token: data.token,
+            subCourseId: this_.subject.id,
+            moduleType: this_.moduleType,
+            exerciseId: exercise.id,
+            answer: exercise.set,
+            isCollect: exercise.get,
+            checkState: exercise.done,
+            point: exercise.sb
+          }), (data) => {
+            //登录判断
+            if (data != null) {
+              if (data.returnCode === 3) {
+                //重新登录
+                this_.navCtrl.setRoot(LoginPage);
+                this_.showMsg("已在其他设备登录，请重新登录！");
+              }
+            }
+          });
+        } else {
+          //do nothing!
+          return;
+        }
+      });
+    }
+  }
+
+  /**
+   * 题目收藏
+   */
+  saveColletStateByAppTokenAndExerciseId(exercise) {
     let this_ = this;
     this_.httpstorage.getStorage('user', (data) => {
       if (data == null) {//无登录信息 返回登录页面
@@ -546,12 +647,37 @@ export class ExamPage {
         return;
       } else if (data.token === '') {//游客不保存提交
         return;
-      } else if (data.token !== undefined && data.token !== '' && data.token.length() > 0) {//登录的注册 可提交做题数据
-
+      } else if (data.token !== null && data.token !== '' && data.token.length > 0) {//登录的注册 可提交做题数据
+        this_.httpstorage.postHttp("/app/exerciseRecordController.do?doSaveCollectQuestionRecordByAppTokenAndExerciseId", JSON.stringify({
+          token: data.token,
+          subCourseId: this_.subject.id,
+          moduleType: this_.moduleType,
+          exerciseId: exercise.id,
+          isCollect: exercise.get
+        }), (data) => {
+          //登录判断
+          if (data != null) {
+            if (data.returnCode === 3) {
+              //重新登录
+              this_.navCtrl.setRoot(LoginPage);
+              this_.showMsg("已在其他设备登录，请重新登录！");
+            }
+          }
+        });
       } else {
         //do nothing!
         return;
       }
     });
+
+  }
+
+  showMsg(msg) {
+    let alert = this.alertCtrl.create({
+      title: '系统通知',
+      subTitle: msg,
+      buttons: ['好']
+    });
+    alert.present();
   }
 }

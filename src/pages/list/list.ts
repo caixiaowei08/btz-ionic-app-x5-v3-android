@@ -4,6 +4,7 @@ import {ListsPage} from '../lists/lists';
 import {ExamPage} from '../exam/exam';
 import {HttpStorage} from '../../providers/httpstorage';
 import {Storage} from '@ionic/storage';
+import {LoginPage} from '../../pages/login/login';
 
 import * as $ from "jquery";
 
@@ -11,12 +12,14 @@ import * as $ from "jquery";
   selector: 'page-list',
   templateUrl: 'list.html'
 })
+
 export class ListPage {
   subject: any;
   title: string;
   test: any;
   type: any;
   loader: any;
+  moduleType: any;
 
   constructor(public alertCtrl: AlertController, public loadingCtrl: LoadingController, public modalCtrl: ModalController, public navCtrl: NavController, public navParams: NavParams, public httpstorage: HttpStorage, public storage: Storage, private httpStorage: HttpStorage) {
     this.subject = this.navParams.get('subject');
@@ -28,149 +31,247 @@ export class ListPage {
       showBackdrop: false
     });
     this.loader.present();
+    this.covertToServiceModuleType(this.type);
     this.getSubsItem(this.subject, this.type);
   }
 
-  downdata(id, type, moduleType, version) {
-    //this.httpstorage.getHttp('/app/appExerciseController.do?getModuleExerciseByCourseIdAndModuleType&subCourseId=' + id + '&moduleType=' + moduleType, (data) => {
-    this.httpstorage.postHttp('/app/appExerciseController.do?getModuleExerciseByCourseIdAndModuleType&subCourseId=' + id + '&moduleType=' + moduleType, JSON.stringify({}), (data) => {
-      //更新本地数据，并加载
-      if (data.returnCode) {
-        this.test = data.content;
-        this.httpstorage.setStorage("s" + id + "i" + type, data.content);
-        this.httpstorage.setStorage("s" + id + "i" + type + "v", version);//更新版本号
-      }
-      this.loader.dismiss();
-    })
+  //转换moduleType
+  covertToServiceModuleType(type) {
+    switch (type) {
+      case 1:
+        this.moduleType = 1;//章节练习
+        break;
+      case 2:
+        this.moduleType = 2;//核型考点
+        break;
+      case 3:
+        this.moduleType = 3;//模拟考题
+        break;
+      case 4:
+        this.moduleType = 4;//考前押题
+        break;
+      case 5:
+        this.moduleType = 7;//历年真题
+        break;
+      default:
+        this.moduleType = 0;
+        break;
+    }
   }
 
-  //特别的，版本更新时，核对数据
-  checkdata(id, type, moduleType, version) {
-    this.httpstorage.getStorage("s" + id + "i" + type, (data) => {
-      //this.showMsg("....compare 1....start....");
-      //首先查看本地数据，如果没有，则直接网络数据覆盖
-      if (data == null) {
-        //this.showMsg("....compare 2....start....");
-        this.downdata(id, type, moduleType, version);
-      } else {//否则对比两方的数据,同步老数据
-        //this.showMsg("....compare 3....start....");
-        let tmp = data.exam;
-        this.httpstorage.postHttp('/app/appExerciseController.do?getModuleExerciseByCourseIdAndModuleType&subCourseId=' + id + '&moduleType=' + moduleType, JSON.stringify({}), (data) => {
-          if (data.returnCode) {
 
-            let newData = data.content;
-            for (let a of newData.exam) {
-              for (let b of tmp) {
-                if (a.id == b.id) {
-                  a.done = b.done;
-                  a.get = b.get;
-                  a.set = b.set;
+  //获取题目的策略
+  getSubsItem(subject: any, type: any) {
+
+    let this_ = this;
+    let subjectId = subject.id;
+    if (subjectId > 0) {//判断课程ID的有效性
+      //有效
+      this.httpstorage.getStorage('user', (user) => {
+        if (user == null) {//无登录信息
+          this_.loader.dismiss();
+          this_.navCtrl.setRoot(LoginPage);
+          return;
+        } else if (user.token === "") {//游客登录
+          //本地获取 获取不到 网络获取 done
+          this_.getExamInfoBySubjectIdAndModuleTypeAndToken(subjectId, this_.moduleType, "", type);
+        } else if (user.token !== null && user.token !== '' && user.token.length > 0) {
+          this_.getExamInfoBySubjectIdAndModuleTypeAndToken(subjectId, this_.moduleType, user.token, type);
+        } else {
+          // do nothing! 这种情况不存在 以防万一 给个提示！
+          this_.loader.dismiss();
+          this_.showMsg("登录用户异常list down load！");
+          return;
+        }
+      });
+    } else {
+      //课程ID无效
+      // do nothing! 这种情况不存在 以防万一 给个提示！
+      this_.showMsg("课程信息异常 subjectId：" + subjectId);
+    }
+  }
+
+  //登录账号获取题目信息
+  getExamInfoBySubjectIdAndModuleTypeAndToken(subjectId, moduleType, token, type) {
+    let this_ = this;
+    let localExamVersionData = null;//本地版本信息
+    let localExamInfoData = null;
+    //首先获取版本 再获取题目信息
+    this_.httpstorage.getStorage("s" + subjectId + "i" + type + "v", (versionData) => {
+      localExamVersionData = versionData;
+      this_.httpstorage.getStorage("s" + subjectId + "i" + type, (examData) => {
+        localExamInfoData = examData;
+        this_.test = localExamInfoData;
+        //开始判断 若无本地版本信息或者题目信息 则直接从网络获取
+        if (localExamVersionData === null) {
+          if (localExamInfoData === null) {
+            //无版本信息 无题目数据 =》直接下载题目数据
+            this_.downloadExamDataBySubjectIdAndModuleTypeAndToken(subjectId, moduleType, token, type);
+          } else {
+            //无版本信息 有题目数据 =》直接获取题目 并将本地合并 新版本上
+            this_.downloadExamDataBySubjectIdAndModuleTypeAndTokenWithMerge(subjectId, moduleType, token, type, localExamInfoData);
+          }
+        } else {
+          if (localExamInfoData === null) {
+            //有版本信息 无题目数据 =》直接下载题目数据
+            this_.downloadExamDataBySubjectIdAndModuleTypeAndToken(subjectId, moduleType, token, type);
+          } else {
+            //有版本信息 有题目数据 =》判断版本信息 是否需要更新
+            this_.httpstorage.getHttp('/app/appModuleController.do?getModuleBySubCourseIdAndModuleType&subCourseId=' + subjectId + '&moduleType=' + moduleType, (remoteExamVersionData) => {
+              if (remoteExamVersionData === null) { //无网络
+                //do nothing 沿用本地版本不变
+                this_.loader.dismiss();
+              } else { //
+                if (remoteExamVersionData.returnCode === 1) {
+                  if (localExamVersionData === remoteExamVersionData.content.versionNo) {
+                    //尝试下载做题记录 进行合并
+                    this_.downloadExamRecordBySubjectIdAndModuleTypeAndTokenWithMerge(subjectId, moduleType, token, type, localExamInfoData);
+                  } else {
+                    this_.downloadExamDataBySubjectIdAndModuleTypeAndTokenWithMerge(subjectId, moduleType, token, type, localExamInfoData);
+                  }
+                } else {
+                  //尝试下载做题记录并合并 沿用本地版本
+                  this_.downloadExamRecordBySubjectIdAndModuleTypeAndTokenWithMerge(subjectId, moduleType, token, type, localExamInfoData);
+                }
+              }
+            });
+          }
+        }
+      });
+
+    });
+  }
+
+  //直接下载题目 无需合并本地题目
+  downloadExamDataBySubjectIdAndModuleTypeAndToken(subjectId, moduleType, token, type) {
+    let this_ = this;
+    this_.httpstorage.postHttp('/app/appExerciseController.do?getModuleExerciseByCourseIdAndModuleTypeAndTokenWithRecord&subCourseId=' + subjectId + '&moduleType=' + moduleType + "&token=" + token, JSON.stringify({}), (data) => {
+      //更新本地数据，并加载
+      if (data === null) {
+        this_.loader.dismiss();
+        this_.showMsg("网络异常！");
+        return;
+      }
+
+      if (data.returnCode === 1) {
+        this_.test = data.content;//用于显示
+        this_.httpstorage.setStorage("s" + subjectId + "i" + type, data.content);//保存题目
+        this_.httpstorage.setStorage("s" + subjectId + "i" + type + "v", data.content.version);//记录版本号
+        this_.loader.dismiss();
+      } else if (data.returnCode === 3) {
+        this_.loader.dismiss();
+        this_.showMsg(data.msg);
+        this_.navCtrl.setRoot(LoginPage);
+      } else {
+        this_.loader.dismiss();
+        this_.showMsg("下载题目异常!");
+      }
+    });
+
+  }
+
+  //下载题目并何合并本地版本
+  downloadExamDataBySubjectIdAndModuleTypeAndTokenWithMerge(subjectId, moduleType, token, type, localExamInfoData) {
+    let this_ = this;
+    this_.httpstorage.postHttp('/app/appExerciseController.do?getModuleExerciseByCourseIdAndModuleTypeAndTokenWithRecord&subCourseId=' + subjectId + '&moduleType=' + moduleType + "&token=" + token, JSON.stringify({}), (data) => {
+      //更新本地数据，并加载
+      if (data === null) {
+        this_.loader.dismiss();
+        return;
+      }
+
+      if (data.returnCode === 1) {
+        for (let remoteExerciseRecordItem of data.content.exam) {
+          for (let localExerciseItem of localExamInfoData.exam) {
+            if (remoteExerciseRecordItem.exerciseId === localExerciseItem.id) {
+              if (remoteExerciseRecordItem.id === localExerciseItem.id) {
+                //若本地存在记录本地覆盖服务端
+                if (localExerciseItem.done > 0) {
+                  remoteExerciseRecordItem.done = localExerciseItem.done;
+                }
+
+                if (localExerciseItem.get > 0) {
+                  remoteExerciseRecordItem.get = localExerciseItem.get;
+                }
+
+                if (localExerciseItem.set !== null && localExerciseItem.set.length > 0) {
+                  remoteExerciseRecordItem.set = localExerciseItem.set;
+                }
+                break;
+              }
+            }
+          }
+        }
+        this_.test = data.content;
+        this_.httpstorage.setStorage("s" + subjectId + "i" + type, data.content);
+        this_.httpstorage.setStorage("s" + subjectId + "i" + type + "v", data.content.version);//记录版本号
+        this_.loader.dismiss();
+      } else if (data.returnCode === 3) {
+        this_.loader.dismiss();
+        this_.showMsg(data.msg);
+        this_.navCtrl.setRoot(LoginPage);
+      } else {
+        this_.loader.dismiss();
+        //this_.showMsg(data.msg);
+        //do nothing
+      }
+    });
+  }
+
+  //下载记录并且合并到本地记录上
+  downloadExamRecordBySubjectIdAndModuleTypeAndTokenWithMerge(subjectId, moduleType, token, type, localExamInfoData) {
+    let this_ = this;
+
+    if (token === "") {//游客无需获取做题记录
+      this_.loader.dismiss();
+      return;
+    }
+
+    this_.httpstorage.postHttp("/app/exerciseRecordController.do?doGetQuestionRecordListByAppTokenAndSubCourseIdAndModuleType", JSON.stringify({
+        token: token,
+        subCourseId: subjectId,
+        moduleType: moduleType,
+      }), (exerciseRecordData) => {
+        if (exerciseRecordData === null) {
+          this_.loader.dismiss();
+          //无网络 do nothing
+        } else {
+          if (exerciseRecordData.returnCode === 1) {
+            for (let remoteExerciseRecordItem of exerciseRecordData.content) {
+              for (let localExerciseItem of localExamInfoData.exam) {
+                if (remoteExerciseRecordItem.exerciseId === localExerciseItem.id) {
+                  //若本地没有记录则覆盖
+                  if (!(localExerciseItem.done > 0)) {
+                    localExerciseItem.done = remoteExerciseRecordItem.checkState;
+                  }
+
+                  if (localExerciseItem.get < 1) {
+                    localExerciseItem.get = remoteExerciseRecordItem.isCollect;
+                  }
+
+                  if (localExerciseItem.set === null || localExerciseItem.set.length === 0) {
+                    localExerciseItem.set = remoteExerciseRecordItem.answer;
+                  }
                   break;
                 }
               }
             }
-
-            this.test = newData;
-            this.httpstorage.setStorage("s" + id + "i" + type, newData);
-            this.httpstorage.setStorage("s" + id + "i" + type + "v", version);//更新版本号
+            this_.test = localExamInfoData;
+            this_.httpstorage.setStorage("s" + subjectId + "i" + type, localExamInfoData);
+            this_.loader.dismiss();
           }
-          this.loader.dismiss();
-        })
+          else if (exerciseRecordData.returnCode === 3) {
+            this_.loader.dismiss();
+            this_.showMsg(exerciseRecordData.msg);
+            this_.navCtrl.setRoot(LoginPage);
+          } else {
+            this_.loader.dismiss();
+            //this_.showMsg(exerciseRecordData.msg);
+            //do nothing
+          }
+        }
       }
-    })
-  }
-
-  getSubsItem(subject: any, type: any) {
-
-    let id = subject.id;
-    let moduleType;
-    switch (type) {
-      case 1:
-        moduleType = 1;
-        break;
-      case 2:
-        moduleType = 2;
-        break;
-      case 3:
-        moduleType = 3;
-        break;
-      case 4:
-        moduleType = 4;
-        break;
-      case 5:
-        moduleType = 7;
-        break;
-      default:
-        moduleType = 0;
-        break;
-    }
-    if (id != 0) {
-      //核对版本号
-      this.httpstorage.getStorage("s" + id + "i" + type + "v", (data) => {
-        //this.showMsg("....versionNo....1...");
-        if (data != null) { //本地已经有版本数据了
-          //this.showMsg("....versionNo....2...");
-          let tmp = data;
-          this.httpstorage.getHttp('/app/appModuleController.do?getModuleBySubCourseIdAndModuleType&subCourseId=' + id + '&moduleType=' + moduleType, (data) => {
-            //this.showMsg("....versionNo....3...");
-            if (data != null) { //有网
-              //this.showMsg("....versionNo....4...");
-              if (data.returnCode) { //有数据
-                //this.showMsg("....versionNo....start....");
-                if (tmp != data.content.versionNo) { //版本不同，更新
-                  //this.showMsg("....versionNo....compare....");
-                  this.checkdata(id, type, moduleType, data.content.versionNo);
-                }
-                else {//版本相同，先从本地加载
-                  //this.showMsg("....versionNo....5...");
-                  this.httpstorage.getStorage("s" + id + "i" + type, (data) => {
-                    //this.showMsg("....versionNo....6...");
-                    //本地有保存
-                    if (data != null) {
-                      this.test = data;
-                      this.loader.dismiss();
-                    }
-                    else {//本地无保存
-                      this.downdata(id, type, moduleType, tmp);
-                    }
-                  })
-                }
-              }
-              else { //无数据,同步，删除本地文件
-                //this.showMsg("....versionNo....7...");
-                this.httpstorage.delStorage("s" + id + "i" + type + "v");
-                this.httpstorage.delStorage("s" + id + "i");
-                this.loader.dismiss();
-              }
-            }
-            else {//无网，从本地加载list,5
-              this.httpstorage.getStorage("s" + id + "i" + type, (data) => {
-                this.test = data;
-                this.loader.dismiss();
-              })
-            }
-          })
-        }
-        else {
-          //本地无保存，从网下载
-          this.httpstorage.getHttp('/app/appModuleController.do?getModuleBySubCourseIdAndModuleType&subCourseId=' + id + '&moduleType=' + moduleType, (data) => {
-            //有网
-            if (data != null) {
-              if (data.returnCode) {//有数据
-                //获取内容并保存
-                this.downdata(id, type, moduleType, data.content.versionNo);
-              }
-              else {//无数据
-                this.loader.dismiss();
-              }
-            }
-            else {//无网
-              this.loader.dismiss();
-            }
-          })
-        }
-      })
-    }
+    );
   }
 
   ionViewDidLoad() {
@@ -203,6 +304,7 @@ export class ListPage {
     return this.done;
   }
 
+//跳转到做题页面
   choose(beg: number, all: number, tit: string, tryOut: any) {
     if (tryOut || (this.subject.exam && this.subject.time >= new Date().getTime())) {
       if (this.type == 1 || this.type == 2) {
@@ -211,6 +313,7 @@ export class ListPage {
           saveQRFunction: this.saveQuestionRecord.bind(this),
           title: tit,
           exams: this.test.exam,
+          moduleType: this.moduleType,
           beg: beg,
           all: all
         });
@@ -242,6 +345,8 @@ export class ListPage {
             subject: this.subject,
             title: this.title,
             exams: exam,
+            saveQRFunction: this.saveQuestionRecord.bind(this),
+            moduleType: this.moduleType,
             mode: false,
             time: totalTime
           });
@@ -276,7 +381,9 @@ export class ListPage {
               v.done = 0;
               v.set = "";
             }
+            this.doClearAllQuestionRecordListByAppTokenAndSubCourseIdAndModuleType();
             this.saveQuestionRecord();
+            //有网的情况下，同时也清除服务端的清除做题记录。
           }
         },
         {
@@ -290,17 +397,17 @@ export class ListPage {
   }
 
   ionViewWillUnload() {
-    if (this.type == 1 || this.type == 2) {
-      this.httpstorage.setStorage("s" + this.subject.id + "i" + this.type, this.test);
-    }
+    //if (this.type == 1 || this.type == 2) {
+    // this.httpstorage.setStorage("s" + this.subject.id + "i" + this.type, this.test);
+    //}
   }
 
   saveQuestionRecord() {
     var this_ = this;
     setTimeout(function () {
-      if (this_.type == 1 || this_.type == 2) {
+      if (this_.type == 1 || this_.type == 2 || this_.type == 4 || this_.type == 5) {
         this_.storage.set("s" + this_.subject.id + "i" + this_.type, this_.test).then((data) => {
-          this_.sendLogToServe("asqrs2.3.0：" + this_.subject.id + ":" + this_.type);
+          this_.sendLogToServe("安卓2.3.0：" + this_.subject.id + ":" + this_.type);
         }).catch((err) => {
           let alert = this.alertCtrl.create({
             title: '做题记录保存异常，请截图，反馈给客服！',
@@ -316,7 +423,6 @@ export class ListPage {
 
   sendLogToServe(msg) {
     var this_ = this;
-    //注解 暂停日志保存
     this_.storage.get("user").then((data) => {
       this_.httpStorage.getHttp("/app/logController.do?log&userId=" + data.userId + "&data=" + msg, (data) => {
       });
@@ -331,5 +437,41 @@ export class ListPage {
     });
     alert.present();
   }
+
+  /**
+   * 重置服务端的做题记录
+   */
+  doClearAllQuestionRecordListByAppTokenAndSubCourseIdAndModuleType() {
+    let this_ = this;
+    if (this.moduleType !== null && (this.moduleType === 1 || this.moduleType === 2 || this.moduleType === 4 || this.moduleType === 7)) { //目前只记录 1、章节练习 2、核心考点的做题 4。考前押题 7.历年真题
+      this_.httpstorage.getStorage('user', (data) => {
+        if (data == null) {//无登录信息 返回登录页面
+          this_.navCtrl.setRoot(LoginPage);
+          return;
+        } else if (data.token === '') {//游客不保存提交
+          return;
+        } else if (data.token !== null && data.token !== '' && data.token.length > 0) {//登录的注册 可提交做题数据
+          this_.httpstorage.postHttp("/app/exerciseRecordController.do?doClearAllQuestionRecordListByAppTokenAndSubCourseIdAndModuleType", JSON.stringify({
+            token: data.token,
+            subCourseId: this_.subject.id,
+            moduleType: this_.moduleType,
+          }), (data) => {
+            //登录判断
+            if (data != null) {
+              if (data.returnCode === 3) {
+                //重新登录
+                this_.navCtrl.setRoot(LoginPage);
+                this_.showMsg("已在其他设备登录，请重新登录！");
+              }
+            }
+          });
+        } else {
+          //do nothing!
+          return;
+        }
+      });
+    }
+  }
+
 
 }

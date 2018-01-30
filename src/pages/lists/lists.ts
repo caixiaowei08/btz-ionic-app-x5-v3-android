@@ -18,6 +18,7 @@ export class ListsPage {
   exam: any;
   remembermode: any;
   notdonemode: any;
+  moduleType: any;
   type: any;
   sum: any;
   types: any;
@@ -29,6 +30,7 @@ export class ListsPage {
     this.exams = this.navParams.get('exams');
     this.beg = this.navParams.get('beg');
     this.all = this.navParams.get('all');
+    this.moduleType = this.navParams.get("moduleType");
     this.saveQRFunction = this.navParams.get('saveQRFunction');
     this.exam = new Array();
     this.remembermode = false;
@@ -117,6 +119,7 @@ export class ListsPage {
       title: this.title,
       exams: this.exam,
       mode: this.remembermode,
+      moduleType:this.moduleType,
       time: 0
     }).then(() => {
       this.dismiss()
