@@ -3,6 +3,7 @@ import {AlertController, ModalController, NavController, NavParams} from 'ionic-
 import {HttpStorage} from '../../providers/httpstorage';
 import {ExamPage} from '../exam/exam';
 import * as $ from "jquery";
+
 @Component({
   selector: 'page-listd',
   templateUrl: 'listd.html'
@@ -68,10 +69,14 @@ export class ListDPage {
     let tmp = this.seg == 's1' ? this.t1.exam : this.t2.exam;
     for (var i = beg; i < beg + all; i++) {
       if (this.type == 10) {
-        if (tmp[i].done == 2 || (tmp[i].done > 0 && tmp[i].done < 1)) this.done++;
+        if (tmp[i].done == 2 || (tmp[i].done > 0 && tmp[i].done < 1)) {
+          this.done++;
+        }
       }
       else {
-        if (tmp[i].get > 0) this.done++;
+        if (tmp[i].get > 0) {
+          this.done++;
+        }
       }
     }
     return this.done;
@@ -100,7 +105,15 @@ export class ListDPage {
           }
         }
       }
-      this.navCtrl.push(ExamPage, {subject: this.subject, title: tit, exams: this.exam, mode: false, time: 0});
+      this.navCtrl.push(ExamPage, {
+        subject: this.subject,
+        title: tit,
+        saveQRFunction: this.saveQRFunction.bind(this),
+        exams: this.exam,
+        moduleType: this.seg == 's1' ? 1 : 2,
+        mode: false,
+        time: 0
+      });
     }
     else {
       let prompt = this.alertCtrl.create({
@@ -134,9 +147,12 @@ export class ListDPage {
     }
   }
 
-  ionViewWillUnload() {
-    if (this.t1ok && this.t2ok) {
+  saveQRFunction() {
+    if (this.t1ok) {
       this.httpstorage.setStorage("s" + this.subject.id + "i1", this.t1);
+    }
+
+    if (this.t2ok) {
       this.httpstorage.setStorage("s" + this.subject.id + "i2", this.t2);
     }
   }

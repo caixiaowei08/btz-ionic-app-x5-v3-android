@@ -152,7 +152,6 @@ export class ListPage {
         this_.showMsg("网络异常！");
         return;
       }
-
       if (data.returnCode === 1) {
         this_.test = data.content;//用于显示
         this_.httpstorage.setStorage("s" + subjectId + "i" + type, data.content);//保存题目
@@ -404,21 +403,19 @@ export class ListPage {
 
   saveQuestionRecord() {
     var this_ = this;
-    setTimeout(function () {
-      if (this_.type == 1 || this_.type == 2 || this_.type == 4 || this_.type == 5) {
-        this_.storage.set("s" + this_.subject.id + "i" + this_.type, this_.test).then((data) => {
-          this_.sendLogToServe("安卓2.3.0：" + this_.subject.id + ":" + this_.type);
-        }).catch((err) => {
-          let alert = this.alertCtrl.create({
-            title: '做题记录保存异常，请截图，反馈给客服！',
-            subTitle: JSON.stringify(err),
-            buttons: ['好']
-          });
-          alert.present();
-          this_.sendLogToServe("err" + JSON.stringify(err));
-        })
-      }
-    }, 500);
+    if (this_.type == 1 || this_.type == 2 || this_.type == 4 || this_.type == 5) {
+      this_.storage.set("s" + this_.subject.id + "i" + this_.type, this_.test).then((data) => {
+        this_.sendLogToServe("安卓2.3.0：" + this_.subject.id + ":" + this_.type);
+      }).catch((err) => {
+        let alert = this.alertCtrl.create({
+          title: '做题记录保存异常，请截图，反馈给客服！',
+          subTitle: JSON.stringify(err),
+          buttons: ['好']
+        });
+        alert.present();
+        this_.sendLogToServe("err" + JSON.stringify(err));
+      });
+    }
   }
 
   sendLogToServe(msg) {

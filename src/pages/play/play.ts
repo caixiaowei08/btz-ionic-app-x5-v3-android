@@ -15,6 +15,4 @@ export class PlayPage {
   dismiss(){
     this.viewCtrl.dismiss();
   }
-
-
 }

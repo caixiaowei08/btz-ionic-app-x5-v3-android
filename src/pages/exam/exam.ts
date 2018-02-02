@@ -1,5 +1,14 @@
-import {Component} from '@angular/core';
-import {ViewController, ModalController, AlertController, NavController, NavParams} from 'ionic-angular';
+import {Component, ViewChild} from '@angular/core';
+import {
+  ViewController,
+  ModalController,
+  AlertController,
+  NavController,
+  NavParams,
+  Navbar,
+  Platform,
+  App
+} from 'ionic-angular';
 import {NullPage} from '../null/null';
 import {NotePage} from '../note/note';
 import {ScorePage} from '../score/score';
@@ -31,8 +40,14 @@ export class ExamPage {
   setDtk: any;
   token: any;
   jsq: any;
+  isExamPage: boolean;
 
-  constructor(public viewCtrl: ViewController, public modalCtrl: ModalController, public alertCtrl: AlertController, public navCtrl: NavController, public navParams: NavParams, public httpstorage: HttpStorage) {
+  @ViewChild(Navbar) navBar: Navbar;//直接获取navBar 子组件
+
+  constructor(public viewCtrl: ViewController, public modalCtrl: ModalController,
+              public alertCtrl: AlertController, public navCtrl: NavController,
+              public navParams: NavParams, public httpstorage: HttpStorage,
+              public platform: Platform, public app: App) {
     this.subject = this.navParams.get('subject');
     this.title = this.navParams.get('title');
     this.exams = this.navParams.get('exams');
@@ -588,14 +603,6 @@ export class ExamPage {
     this.navCtrl.pop();
   }
 
-  ionViewWillLeave() {
-    clearInterval(this.jsq);
-  }
-
-  ionViewDidLeave() {
-    clearInterval(this.jsq);
-  }
-
   /**
    * 做题时 做题记录上传服务器 做题记录保存
    */
@@ -680,4 +687,56 @@ export class ExamPage {
     });
     alert.present();
   }
+
+  ionViewDidEnter() {
+    this.isExamPage = true;
+  }
+
+  ionViewDidLeave() {
+    clearInterval(this.jsq);
+    this.isExamPage = false;
+  }
+
+  ionViewWillLeave() {
+    clearInterval(this.jsq);
+  }
+
+  //返回键监听
+  ionViewDidLoad() {
+    let this_ = this;
+    this_.navBar.backButtonClick = this.backButtonClick;
+    //物理返回键
+    this_.platform.registerBackButtonAction(() => {
+      if (this.isExamPage) {
+        this_.backButtonClick(null);
+      } else {
+        this_.app.goBack();
+      }
+    }, 10);
+  }
+
+  // 返回
+  backButtonClick = (e: UIEvent) => {
+    let this_ = this;
+    let prompt = this_.alertCtrl.create({
+      title: '提示',
+      subTitle: '是否交卷并保存做题记录?',
+      buttons: [
+        {
+          text: '取消',
+          handler: data => {
+          }
+        },
+        {
+          text: '确定',
+          handler: data => {
+            this_.checkAll();
+          }
+        }
+      ]
+    });
+    prompt.present();
+  }
+
+
 }

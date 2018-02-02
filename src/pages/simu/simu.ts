@@ -94,7 +94,6 @@ export class SimuPage {
               }
             }
           }
-          //console.log(this.exam);
           this.record.date = new Date().getTime();
           this.record.time = totalTime;
           //模拟考场
@@ -104,7 +103,6 @@ export class SimuPage {
             }
             data.push(this.record);
             this.allSimuExams = data;
-            console.log(this.subject.id);
             this.httpstorage.setStorage("s" + this.subject.id + "r", this.allSimuExams);
             this.navCtrl.push(ExamPage, {
               subject: this.subject,

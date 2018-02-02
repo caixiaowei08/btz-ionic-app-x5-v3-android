@@ -26,11 +26,13 @@ export class RecordPage {
 
     this.record = [];
     this.httpstorage.getStorage("s" + this.subject.id + "r", (data) => {
-      this.allSimuExams = data;
-      //排序
-      this.record = this.allSimuExams.sort((a, b) => {
-        return b.date - a.date;
-      });
+      if (data !== null) {
+        this.allSimuExams = data;
+        //排序
+        this.record = this.allSimuExams.sort((a, b) => {
+          return b.date - a.date;
+        });
+      }
     })
     this.exam = [];
   }
@@ -51,17 +53,6 @@ export class RecordPage {
   }
 
   choose(i) {
-    /**for (let w of this.record[i].list) {
-      for (let v of this.exams) {
-        if (v.id == w.id) {
-          v.sb = w.sb;
-          v.done = 0;
-          v.set = "";
-          this.exam.push(v);
-          break;
-        }
-      }
-    }*/
     this.navCtrl.push(ExamPage, {
       subject: this.subject,
       title: this.title,
