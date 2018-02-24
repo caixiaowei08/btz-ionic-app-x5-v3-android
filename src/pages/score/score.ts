@@ -25,6 +25,7 @@ export class ScorePage {
   title: any;
   hand: any;
   saveQRFunction: any;
+  comeFrom: any;
 
   constructor(public alertCtrl: AlertController, private navCtrl: NavController, public navParams: NavParams, private http: Http, private storage: Storage, public httpStorage: HttpStorage) {
     this.exams = this.navParams.get("exams");
@@ -32,6 +33,7 @@ export class ScorePage {
     this.check = this.navParams.get("check");
     this.subject = this.navParams.get("subject");
     this.title = this.navParams.get("title");
+    this.comeFrom = this.navParams.get("comeFrom");
     this.moduleType = this.navParams.get("moduleType");
     this.saveQRFunction = this.navParams.get("saveQRFunction");
     this.score = 0;
@@ -243,6 +245,11 @@ export class ScorePage {
 
   sendAllRecordToServce() {
     let this_ = this;
+
+    if (this_.comeFrom !== undefined && (this_.comeFrom === 1 || this_.comeFrom === 2)) {
+      return;
+    }
+
     setTimeout(function () {
       if (this_.moduleType !== null && (this_.moduleType === 1 || this_.moduleType === 2 || this_.moduleType === 4 || this_.moduleType === 7)) {
         this_.httpStorage.getStorage("s" + this_.subject.id + "i" + this_.covertModuleTypeToType(this_.moduleType), (data) => {

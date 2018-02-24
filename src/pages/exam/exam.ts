@@ -41,6 +41,7 @@ export class ExamPage {
   token: any;
   jsq: any;
   isExamPage: boolean;
+  comeFrom: number;
 
   @ViewChild(Navbar) navBar: Navbar;//直接获取navBar 子组件
 
@@ -52,6 +53,7 @@ export class ExamPage {
     this.title = this.navParams.get('title');
     this.exams = this.navParams.get('exams');
     this.mode = this.navParams.get('mode');
+    this.comeFrom = this.navParams.get('comeFrom');
     this.time = this.navParams.get("time");
     this.moduleType = this.navParams.get("moduleType");
     this.saveQRFunction = this.navParams.get("saveQRFunction");
@@ -539,6 +541,7 @@ export class ExamPage {
       exams: this.exams,
       mode: this.time,
       check: this.check,
+      comeFrom: this.comeFrom,
       moduleType: this.moduleType,
       saveQRFunction: this.saveQRFunction
     }).then(() => {
@@ -718,6 +721,11 @@ export class ExamPage {
   // 返回
   backButtonClick = (e: UIEvent) => {
     let this_ = this;
+    if (this_.comeFrom !== undefined && (this_.comeFrom === 1 || this_.comeFrom === 2)) {
+      this_.navCtrl.pop();
+      return;
+    }
+
     let prompt = this_.alertCtrl.create({
       title: '提示',
       subTitle: '是否交卷并保存做题记录?',
