@@ -41,10 +41,11 @@ export class LoginPage {
           let user: any = {
             token: data.content.token,
             userId: data.content.userId,
-            userName: data.content.userName
+            userName: data.content.userName,
+            phoneNo: data.content.phoneNo
           }
           this_.storge.set("user", user).then((data) => {
-              this_.navCtrl.setRoot(TabsPage);
+              this_.navCtrl.setRoot(TabsPage, {comeFrom: 'loginPage', tabsSelect: 'loginPage'});
             }
           ).catch((err) => {
             let alert = this.alertCtrl.create({
@@ -79,7 +80,8 @@ export class LoginPage {
     let user: any = {
       token: '',
       userId: '百词斩免登陆测试用户',
-      userName: ''
+      userName: '',
+      phoneNo: ''
     }
     this_.storge.set("user", user).then((data) => {
         this_.navCtrl.setRoot(TabsPage);

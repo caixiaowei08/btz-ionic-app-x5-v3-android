@@ -5,6 +5,7 @@ import {FilePage} from '../file/file';
 import {FindPage} from '../find/find';
 import {MsgPage} from '../msg/msg';
 import {HttpStorage} from '../../providers/httpstorage';
+import {PhonePage} from "../phone/phone";
 
 @Component({
   selector: 'page-mine',
@@ -13,6 +14,7 @@ import {HttpStorage} from '../../providers/httpstorage';
 export class MinePage {
   user: string;
   darkmode: any;
+  userLoginFlag: any;
   newmsg: any;
 
   constructor(private app: App,
@@ -20,11 +22,19 @@ export class MinePage {
               private viewCtrl: ViewController,
               private httpstorage: HttpStorage) {
     this.user = "";
+    this.userLoginFlag = false;
     this.newmsg = false;
   }
 
   ionViewDidEnter() {
     this.httpstorage.getStorage('user', (data) => {
+
+      if (data.token !== null && data.token !== "" && data.token.length > 1) {
+        this.userLoginFlag = true;
+      } else {
+        this.userLoginFlag = false;
+      }
+
       this.user = data.userId;
       this.httpstorage.getHttp("/app/feedbackController.do?doGetFeedBackInfo&token=" + data.token, (data) => {
         if (data != null && data.returnCode && data.content) {
@@ -54,6 +64,10 @@ export class MinePage {
 
   goFind() {
     this.navCtrl.push(FindPage);
+  }
+
+  goSetPhone() {
+    this.navCtrl.push(PhonePage);
   }
 
   dark() {
