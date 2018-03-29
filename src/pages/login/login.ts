@@ -79,7 +79,7 @@ export class LoginPage {
     var this_ = this;
     let user: any = {
       token: '',
-      userId: '百词斩免登陆测试用户',
+      userId: '百题斩免登陆测试用户',
       userName: '',
       phoneNo: ''
     }
