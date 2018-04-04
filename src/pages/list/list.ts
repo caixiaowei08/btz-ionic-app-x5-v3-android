@@ -62,7 +62,6 @@ export class ListPage {
 
   //获取题目的策略
   getSubsItem(subject: any, type: any) {
-
     let this_ = this;
     let subjectId = subject.id;
     if (subjectId > 0) {//判断课程ID的有效性

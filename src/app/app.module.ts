@@ -8,6 +8,8 @@ import {HTTP} from '@ionic-native/http';
 import {HttpStorage} from '../providers/httpstorage';
 import {FileTransfer, FileTransferObject} from '@ionic-native/file-transfer';
 import {File} from '@ionic-native/file';
+import {AndroidExoplayer} from '@ionic-native/android-exoplayer';
+import {StreamingMedia} from '@ionic-native/streaming-media';
 
 import {LoginPage} from '../pages/login/login';
 import {TabsPage} from '../pages/tabs/tabs';
@@ -117,7 +119,9 @@ import {SplashScreen} from '@ionic-native/splash-screen';
     FileTransfer,
     FileTransferObject,
     File,
-    HTTP
+    HTTP,
+    StreamingMedia,
+    AndroidExoplayer
   ]
 })
 export class AppModule {
