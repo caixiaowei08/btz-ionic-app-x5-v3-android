@@ -4,6 +4,7 @@ import {File} from '@ionic-native/file';
 import {DomSanitizer} from '@angular/platform-browser';
 import * as $ from "jquery";
 import {Storage} from '@ionic/storage';
+import {StreamingMedia, StreamingVideoOptions} from "@ionic-native/streaming-media";
 declare let cordova: any;
 
 @Component({
@@ -25,8 +26,9 @@ export class VideoPage {
   currentVideoItem: any;
   currentPlayVideoItemId: number = -1;
   playSaveCurrentFlag: boolean = false;
+  currentPlayer: boolean = false;
 
-  constructor(public navParams: NavParams, private sanitizer: DomSanitizer, public file: File, public alertCtrl: AlertController, private toastCtrl: ToastController, private storage: Storage) {
+  constructor(public navParams: NavParams, private sanitizer: DomSanitizer, public file: File, public alertCtrl: AlertController, private toastCtrl: ToastController, private storage: Storage, private streamingMedia: StreamingMedia) {
     this.seg = "s1";
     this.subject = this.navParams.get('subject');
     this.videos = this.navParams.get('videos');
@@ -40,6 +42,15 @@ export class VideoPage {
     let this_ = this;
     this_.onProgress();
     this_.initAllVideoState();
+    this_.storage.get("currentPlayer").then((data) => {
+      if (data === true) {
+        this_.currentPlayer = true;
+      } else if (data === false) {
+        this_.currentPlayer = false;
+      } else {
+        this_.currentPlayer = false
+      }
+    });
   }
 
   //所有的下载进程进行监控
@@ -161,18 +172,27 @@ export class VideoPage {
       }).catch((error) => {
           //do nothing
         }
-      )
-      setTimeout(function () {
-        this_.storage.get("videoPlayTimeRecord" + this_.currentVideoItem.id).then((data) => {
-          if (data != null && data.currentTime > 0) {
-            $("#video")[0].currentTime = (data.currentTime - 10 > 0) ? data.currentTime - 10 : 0;
-          }
-          this_.playSaveCurrentFlag = true;
-        }).catch((error) => {
-          this_.playSaveCurrentFlag = true;
-        });
-        $("#video")[0].play();
-      }, 1000);
+      );
+
+      if (this_.currentPlayer === true) { //原生播放器播放
+        this_.playVideoWithStreamingMedia(this_.currentVideoUrl);
+        $("#video")[0].pause();
+        this_.playSaveCurrentFlag = true;
+      } else {
+        setTimeout(function () {
+          this_.storage.get("videoPlayTimeRecord" + this_.currentVideoItem.id).then((data) => {
+            if (data != null && data.currentTime > 0) {
+              $("#video")[0].currentTime = (data.currentTime - 10 > 0) ? data.currentTime - 10 : 0;
+            }
+            this_.playSaveCurrentFlag = true;
+          }).catch((error) => {
+            this_.playSaveCurrentFlag = true;
+          });
+          $("#video")[0].play();
+        }, 1000);
+      }
+
+
     }, (error) => {
       this_.showMsg("播放错误code：10001");
     });
@@ -299,6 +319,31 @@ export class VideoPage {
     }
     return false;
   };
+
+  setPlayer() {
+    let this_ = this;
+    if (this_.currentPlayer === true) {
+      this_.storage.set("currentPlayer", this_.currentPlayer);
+    } else if (this_.currentPlayer === false) {
+      this_.storage.set("currentPlayer", this_.currentPlayer);
+    }
+  }
+
+  playVideoWithStreamingMedia(videoDir: string) {
+    let this_ = this;
+    let options: StreamingVideoOptions = {
+      successCallback: () => {
+        console.log('Video played');
+      },
+      errorCallback: (e) => {
+        this_.presentToast("Error streaming");
+        console.log('Error streaming');
+      },
+      orientation: 'landscape'
+    };
+    this_.streamingMedia.playVideo(videoDir, options);
+  }
+
 }
 
 
