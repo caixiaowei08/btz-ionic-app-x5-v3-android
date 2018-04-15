@@ -3,7 +3,8 @@ import {ModalController,NavController, NavParams, AlertController, ToastControll
 import {File} from '@ionic-native/file';
 import {HttpStorage} from '../../providers/httpstorage';
 import {StreamingMedia, StreamingVideoOptions} from "@ionic-native/streaming-media";
-import {PlayPage} from "../play/play";
+import {Storage} from '@ionic/storage';
+
 declare let cordova: any;
 declare let ExoPlayer: any;
 
@@ -16,20 +17,32 @@ export class FilePage {
   url: any;
   videoTitle: string;
 
-  constructor(public modelCtrl:ModalController,public navCtrl: NavController, public navParams: NavParams, public file: File, public httpstorage: HttpStorage, public alertCtrl: AlertController, private streamingMedia: StreamingMedia, private toastCtrl: ToastController) {
+  constructor(public modelCtrl:ModalController,public navCtrl: NavController, public navParams: NavParams, public file: File, public httpstorage: HttpStorage, public alertCtrl: AlertController, private streamingMedia: StreamingMedia, private toastCtrl: ToastController,private storage:Storage) {
     this.videoList = null;
+    this.loadLocalVideoFile();
   }
 
-  ionViewDidEnter() {
-    let this_ = this;
-    this_.loadLocalVideoFile();
-  }
+  // ionViewDidEnter() {
+  //   let this_ = this;
+  //   this_.loadLocalVideoFile();
+  // }
 
 
   loadLocalVideoFile() {
     let this_ = this;
     cordova.plugins.CordovaFileTransfer.findVideoList(this_.file.dataDirectory, (data) => {
       this_.videoList = data.videoList;
+      for(let i = 0;i<this_.videoList.length;i++ ){
+        let videoItemInfo  =  this_.videoList[i];
+        this_.storage.get("videoInfoItem"+videoItemInfo.id
+        ).then((videoInfoItemData)=>{
+          if(videoInfoItemData!=null){
+            videoItemInfo.title = videoInfoItemData.title;
+          }else{
+            videoItemInfo.title = videoItemInfo.fileName;
+          }
+        });
+      }
     }, (error) => {
     });
   }
@@ -53,11 +66,6 @@ export class FilePage {
 
   playVideo(videoDir: string) {
     let this_ = this;
-/*    this_.url = this_.file.dataDirectory.replace("file://", "") + videoDir;
-    this_.videoTitle = videoDir
-
-    let modal = this_.modelCtrl.create(PlayPage,{url:this_.url,title:this_.videoTitle})
-    modal.present();*/
     let options: StreamingVideoOptions = {
      successCallback: () => {
      console.log('Video played');
@@ -69,7 +77,6 @@ export class FilePage {
      orientation: 'landscape'
      };
      this_.streamingMedia.playVideo(this_.file.dataDirectory + videoDir, options);
-   // ExoPlayer.show({url: this_.file.dataDirectory+videoDir});
   }
 
   presentToast(msg: string) {

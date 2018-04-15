@@ -86,6 +86,8 @@ export class VideoPage {
         for (let j = 0; j < this_.videos[i].list.length; j++) {
           let videoItem = this_.videos[i].list[j];
           //初始化播放状态
+          this_.storage.set("videoInfoItem"+videoItem.id,videoItem).then(data=>{}).catch((err)=>{});//保存视频数据到手机 给后面的下载视频 配置视频名称
+
           this_.storage.get("videoPlayTimeRecord" + videoItem.id).then((data) => {
             if (data != null) {
               videoItem.currentTime = data.currentTime;

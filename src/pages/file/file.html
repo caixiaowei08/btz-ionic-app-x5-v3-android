@@ -8,7 +8,7 @@
   <div *ngIf="videoList!=null">
     <div class="video-content" *ngFor="let videoItem of videoList;let i = index">
       <img src="assets/images/play.png"/>
-      <div class="video-text" (click)="playVideo(videoItem.fileName)">{{videoItem.fileName}}
+      <div class="video-text" (click)="playVideo(videoItem.fileName)">{{videoItem.title}}
         <p>{{videoItem.lastModifyTime}}</p>
       </div>
       <div class="video-delete" (click)="delete(videoItem.fileName)"></div>
