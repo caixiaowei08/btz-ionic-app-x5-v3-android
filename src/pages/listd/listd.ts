@@ -108,7 +108,7 @@ export class ListDPage {
       this.navCtrl.push(ExamPage, {
         subject: this.subject,
         title: tit,
-        comeFrom:1,//跳转试题页面
+        comeFrom: this.type === 10 ? 1 : 2,//跳转试题页面
         saveQRFunction: this.saveQRFunction.bind(this),
         exams: this.exam,
         moduleType: this.seg == 's1' ? 1 : 2,
@@ -149,7 +149,6 @@ export class ListDPage {
   }
 
   ionViewWillUnload() {
-
     if (this.t1ok) {
       this.httpstorage.setStorage("s" + this.subject.id + "i1", this.t1);
     }
@@ -157,21 +156,17 @@ export class ListDPage {
     if (this.t2ok) {
       this.httpstorage.setStorage("s" + this.subject.id + "i2", this.t2);
     }
-
   }
 
   //保存做题记录
   saveQRFunction() {
-
-    /*if (this.t1ok) {
+    if (this.t1ok) {
       this.httpstorage.setStorage("s" + this.subject.id + "i1", this.t1);
     }
 
     if (this.t2ok) {
       this.httpstorage.setStorage("s" + this.subject.id + "i2", this.t2);
-    }*/
-
-
+    }
   }
 
 }

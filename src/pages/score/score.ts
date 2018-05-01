@@ -13,7 +13,7 @@ import {LoginPage} from '../../pages/login/login';
 })
 export class ScorePage {
   exams: any;
-  res: Array<{ type: number, typeName: string, right: number, wrong: number, value: number }>
+  res: Array<{type: number, typeName: string, right: number, wrong: number, value: number}>
   score: any;
   check: any;
   exam: any;
@@ -129,7 +129,7 @@ export class ScorePage {
       })
       prompt.present();
     }
-    this.sendLogToServe("asr2.3.0:" + this.right + ":" + this.all);
+    this.sendLogToServe("asr2.3.8:" + this.right + ":" + this.all);
     this.saveQRFunction();
     this.sendAllRecordToServce();
   }
@@ -151,12 +151,12 @@ export class ScorePage {
         newexams.push(val);
       }
     }
-    this.navCtrl.push(ExamPage, {subject: this.subject, title: this.title, exams: newexams, mode: 2, time: 0});
+    this.navCtrl.push(ExamPage, {subject: this.subject, title: this.title, exams: newexams,comeFrom:2, mode: 2, time: 0});
   }
 
   //查看全部做的信息
   getAll() {
-    this.navCtrl.push(ExamPage, {subject: this.subject, title: this.title, exams: this.exams, mode: 2, time: 0});
+    this.navCtrl.push(ExamPage, {subject: this.subject, title: this.title, exams: this.exams,comeFrom:2, mode: 2, time: 0});
   }
 
   //查看错题信息
@@ -167,7 +167,7 @@ export class ScorePage {
         newexams.push(val);
       }
     }
-    this.navCtrl.push(ExamPage, {subject: this.subject, title: this.title, exams: newexams, mode: 2, time: 0});
+    this.navCtrl.push(ExamPage, {subject: this.subject, title: this.title, exams: newexams,comeFrom:2, mode: 2, time: 0});
   }
 
   sendLogToServe(msg) {
@@ -246,7 +246,7 @@ export class ScorePage {
   sendAllRecordToServce() {
     let this_ = this;
 
-    if (this_.comeFrom !== undefined && (this_.comeFrom === 1 || this_.comeFrom === 2)) {
+    if (this_.comeFrom !== undefined && (this_.comeFrom === 2)) {
       return;
     }
 

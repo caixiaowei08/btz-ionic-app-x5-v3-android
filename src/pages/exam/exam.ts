@@ -720,6 +720,7 @@ export class ExamPage {
 
   // 返回
   backButtonClick = (e: UIEvent) => {
+
     let this_ = this;
     if (this_.comeFrom !== undefined && (this_.comeFrom === 1 || this_.comeFrom === 2)) {
       this_.navCtrl.pop();
