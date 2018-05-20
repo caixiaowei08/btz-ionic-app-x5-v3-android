@@ -194,19 +194,13 @@ export class HomePage {
   }
 
   getSlides() {
-    this.httpstorage.getHttp('/app/carouselController.do?getCarousel&subCourseId=' + this.subject.id, (data) => {
+    this.httpstorage.getHttp('/app/carouselController.do?getCarouselForNewVersion&subCourseId=' + this.subject.id, (data) => {
       if (data != null) {
         if (data.returnCode) {
           this.slides = data.content;
         }
         else {
-          this.httpstorage.getHttp('/app/carouselController.do?getCarousel', (data) => {
-            if (data != null) {
-              if (data.returnCode) {
-                this.slides = data.content;
-              }
-            }
-          })
+          this.slides = [];
         }
       }
     })
