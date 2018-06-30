@@ -304,6 +304,7 @@ export class VideoPage {
 
 
   isOk(video) {
+    console.log(this.subject);
     //课程的权限
     if (video.tryOut || (this.subject.videoClass !== undefined && this.contains(this.subject.videoClass, video.authId) && this.subject.time >= new Date().getTime())) {
       return true;
